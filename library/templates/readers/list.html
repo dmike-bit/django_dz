@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список читателей</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .search-form {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .reader-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reader-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .reader-info {
+            margin: 5px 0;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Список читателей</h1>
+    
+    <div class="search-form">
+        <form method="get">
+            <input type="text" name="search" placeholder="Поиск по ФИО, email или телефону" value="{{ search_query }}">
+            <button type="submit">Найти</button>
+            <a href="{% url 'library:reader_list' %}">Сбросить</a>
+        </form>
+    </div>
+    
+    <a href="{% url 'library:reader_create' %}" class="btn">Добавить читателя</a>
+    
+    {% if readers %}
+        <ul class="reader-list">
+            {% for reader in readers %}
+                <li class="reader-item">
+                    <h3>{{ reader.full_name }}</h3>
+                    <p class="reader-info"><strong>Email:</strong> {{ reader.email }}</p>
+                    <p class="reader-info"><strong>Телефон:</strong> {{ reader.phone_number }}</p>
+                    <p class="reader-info"><strong>Адрес:</strong> {{ reader.address }}</p>
+                    <p class="reader-info"><strong>Дата рождения:</strong> {{ reader.birth_date|date:"d.m.Y" }}</p>
+                    <p class="reader-info"><strong>Зарегистрирован:</strong> {{ reader.registration_date|date:"d.m.Y H:i" }}</p>
+                    <p class="reader-info">
+                        <strong>Активные брони:</strong> 
+                        {{ reader.get_active_reservations.count }}
+                    </p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="no-data">
+            <p>Читатели не найдены</p>
+            <a href="{% url 'library:reader_create' %}" class="btn">Добавить первого читателя</a>
+        </div>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'library:book_list' %}">← Назад к книгам</a>
+</body>
+</html>

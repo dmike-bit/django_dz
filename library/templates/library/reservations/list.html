@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список бронирований</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .filters {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        select, input[type="text"] {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-active { color: green; font-weight: bold; }
+        .status-completed { color: blue; }
+        .status-canceled { color: red; }
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Список бронирований</h1>
+    
+    <div class="filters">
+        <form method="get">
+            <label>
+                Статус:
+                <select name="status" onchange="this.form.submit()">
+                    <option value="">Все статусы</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Активные</option>
+                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Завершенные</option>
+                    <option value="canceled" {% if request.GET.status == 'canceled' %}selected{% endif %}>Отмененные</option>
+                </select>
+            </label>
+            
+            <label>
+                Поиск:
+                <input type="text" name="search" placeholder="Поиск по книге или читателю" value="{{ request.GET.search }}">
+            </label>
+            
+            <button type="submit">Применить</button>
+            <a href="{% url 'library:reservation_list' %}">Сбросить</a>
+        </form>
+    </div>
+    
+    <a href="{% url 'library:reservation_create' %}" class="btn">Добавить бронь</a>
+    
+    {% if reservations %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Книга</th>
+                    <th>Читатель</th>
+                    <th>Дата брони</th>
+                    <th>Дата окончания</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                    <tr>
+                        <td>
+                            <strong>{{ reservation.book.title }}</strong><br>
+                            <small>ISBN: {{ reservation.book.isbn }}</small>
+                        </td>
+                        <td>
+                            {{ reservation.reader.full_name }}<br>
+                            <small>{{ reservation.reader.email }}</small>
+                        </td>
+                        <td>{{ reservation.reservation_date|date:"d.m.Y H:i" }}</td>
+                        <td>{{ reservation.end_date|date:"d.m.Y H:i" }}</td>
+                        <td class="status-{{ reservation.status }}">
+                            {{ reservation.get_status_display }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-data">
+            <p>Бронирования не найдены</p>
+            <a href="{% url 'library:reservation_create' %}" class="btn">Добавить первую бронь</a>
+        </div>
+    {% endif %}
+    
+    <br>
+    <div>
+        <a href="{% url 'library:book_list' %}">← К списку книг</a> |
+        <a href="{% url 'library:reader_list' %}">← К списку читателей</a>
+    </div>
+</body>
+</html>

@@ -4,8 +4,74 @@ from django.db.models import Prefetch
 
 
 from django.views.generic import CreateView
-from django.shortcuts import get_object_or_404
 from .forms import BookForm
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import ListView
+from django.db.models import Q
+from .models import Reader, BookReservation
+from .forms import ReaderForm, BookReservationForm
+
+def reader_list(request):
+    """Список читателей с поиском"""
+    search_query = request.GET.get('search', '')
+    
+    if search_query:
+        readers = Reader.objects.filter(
+            Q(full_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(phone_number__icontains=search_query)
+        )
+    else:
+        readers = Reader.objects.all()
+    
+    return render(request, 'readers/list.html', {
+        'readers': readers,
+        'search_query': search_query
+    })
+
+def reader_create(request):
+    """Создание нового читателя"""
+    if request.method == 'POST':
+        form = ReaderForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('library:reader_list')
+    else:
+        form = ReaderForm()
+    
+    return render(request, 'readers/form.html', {
+        'form': form,
+        'title': 'Добавить читателя'
+    })
+
+class BookReservationCreateView(CreateView):
+    """Создание бронирования книги"""
+    model = BookReservation
+    form_class = BookReservationForm
+    template_name = 'reservations/form.html'
+    success_url = '/reservations/'
+
+    def form_valid(self, form):
+        # Устанавливаем статус активной брони
+        form.instance.status = 'active'
+        return super().form_valid(form)
+
+class ReservationListView(ListView):
+    """Список бронирований"""
+    model = BookReservation
+    template_name = 'reservations/list.html'
+    context_object_name = 'reservations'
+    ordering = ['-reservation_date']
+    
+    def get_queryset(self):
+        status_filter = self.request.GET.get('status', '')
+        queryset = super().get_queryset()
+        
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset.select_related('book', 'reader')
 
 class BookCreateView(CreateView):
     model = Book

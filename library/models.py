@@ -1,6 +1,115 @@
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-from datetime import date
+from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
+from datetime import date, timedelta
+from django.utils import timezone
+
+class Reader(models.Model):
+    """Модель читателя"""
+    full_name = models.CharField(max_length=200, verbose_name="ФИО читателя")
+    birth_date = models.DateField(verbose_name="Дата рождения")
+    address = models.TextField(verbose_name="Адрес")
+    phone_number = models.CharField(
+        max_length=15,
+        verbose_name="Номер телефона",
+        validators=[
+            RegexValidator(
+                regex=r'^\+?1?\d{9,15}$',
+                message="Номер телефона должен быть в формате: '+999999999'. До 15 цифр."
+            )
+        ]
+    )
+    email = models.EmailField(verbose_name="Email", unique=True)
+    registration_date = models.DateTimeField(
+        verbose_name="Дата регистрации",
+        auto_now_add=True
+    )
+    
+    class Meta:
+        verbose_name = "Читатель"
+        verbose_name_plural = "Читатели"
+        ordering = ['full_name']
+        indexes = [
+            models.Index(fields=['full_name']),
+            models.Index(fields=['email']),
+        ]
+    
+    def __str__(self):
+        return self.full_name
+    
+    def get_age(self):
+        """Возвращает возраст читателя"""
+        today = date.today()
+        return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+    
+    def get_active_reservations(self):
+        """Возвращает активные брони читателя"""
+        return self.reservations.filter(status='active')
+    
+    def has_active_reservation(self, book):
+        """Проверяет, есть ли у читателя активная бронь на книгу"""
+        return self.reservations.filter(book=book, status='active').exists()
+
+class BookReservation(models.Model):
+    """Модель бронирования книги"""
+    STATUS_CHOICES = [
+        ('active', 'Активная'),
+        ('completed', 'Завершена'),
+        ('canceled', 'Отменена'),
+    ]
+    
+    book = models.ForeignKey(
+        'Book',
+        on_delete=models.CASCADE,
+        verbose_name="Книга",
+        related_name="reservations"
+    )
+    reader = models.ForeignKey(
+        Reader,
+        on_delete=models.CASCADE,
+        verbose_name="Читатель",
+        related_name="reservations"
+    )
+    reservation_date = models.DateTimeField(
+        verbose_name="Дата бронирования",
+        auto_now_add=True
+    )
+    end_date = models.DateTimeField(verbose_name="Дата окончания брони")
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='active',
+        verbose_name="Статус"
+    )
+    
+    class Meta:
+        verbose_name = "Бронь книги"
+        verbose_name_plural = "Брони книг"
+        ordering = ['-reservation_date']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['end_date']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['book', 'reader'],
+                condition=models.Q(status='active'),
+                name='unique_active_reservation_per_reader'
+            )
+        ]
+    
+    def __str__(self):
+        return f"Бронь #{self.id}"
+    
+    @property
+    def is_active(self):
+        """Проверяет, активна ли бронь"""
+        return self.status == 'active' and timezone.now() < self.end_date
+    
+    def save(self, *args, **kwargs):
+        """Автоматически устанавливаем дату окончания брони при создании"""
+        if not self.pk and not self.end_date:
+            self.end_date = timezone.now() + timedelta(days=14)  # 2 недели брони
+        super().save(*args, **kwargs)
 
 class Genre(models.Model):
     """Модель жанра"""

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Добавить бронь книги</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        select, input[type="datetime-local"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Добавить бронь книги</h1>
+        
+        {% if form.errors %}
+            <div style="color: red; margin-bottom: 15px;">
+                <strong>Пожалуйста, исправьте ошибки:</strong>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.book.id_for_label }}">Книга:</label>
+                <select name="book" id="{{ form.book.id_for_label }}" required>
+                    <option value="">Выберите книгу</option>
+                    {% for book in form.fields.book.queryset %}
+                        <option value="{{ book.pk }}" {% if form.book.value == book.pk %}selected{% endif %}>
+                            {{ book.title }} ({{ book.get_authors_list }})
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if form.book.errors %}
+                    <div class="error">{{ form.book.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.reader.id_for_label }}">Читатель:</label>
+                <select name="reader" id="{{ form.reader.id_for_label }}" required>
+                    <option value="">Выберите читателя</option>
+                    {% for reader in form.fields.reader.queryset %}
+                        <option value="{{ reader.pk }}" {% if form.reader.value == reader.pk %}selected{% endif %}>
+                            {{ reader.full_name }} ({{ reader.email }})
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if form.reader.errors %}
+                    <div class="error">{{ form.reader.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.end_date.id_for_label }}">Дата окончания брони:</label>
+                <input type="datetime-local" name="end_date" id="{{ form.end_date.id_for_label }}"
+                       value="{{ form.end_date.value|default:'' }}">
+                {% if form.end_date.errors %}
+                    <div class="error">{{ form.end_date.errors }}</div>
+                {% endif %}
+                <div class="help-text">Оставьте пустым для автоматической установки (2 недели)</div>
+            </div>
+            
+            <button type="submit" class="btn">Создать бронь</button>
+        </form>
+        
+        <br>
+        <a href="{% url 'library:reservation_list' %}">← Назад к списку броней</a>
+        <br>
+        <a href="{% url 'library:book_list' %}">← Назад к списку книг</a>
+    </div>
+</body>
+</html>
