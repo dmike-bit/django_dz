@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ book.title }}</title>
+</head>
+<body>
+    <h1>{{ book.title }}</h1>
+    
+    <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+    <p><strong>Год издания:</strong> {{ book.publication_year }}</p>
+    
+    {% if book.authors.all %}
+        <p><strong>Авторы:</strong> {{ book.get_authors_list }}</p>
+    {% endif %}
+    
+    {% if book.publisher %}
+        <p><strong>Издательство:</strong> 
+            <a href="{% url 'library:publisher_detail' book.publisher.pk %}">{{ book.publisher.name }}</a>
+        </p>
+    {% endif %}
+    
+    {% if book.genres.all %}
+        <p><strong>Жанры:</strong> 
+            {% for genre in book.genres.all %}
+                <a href="{% url 'library:genre_detail' genre.pk %}">{{ genre.name }}</a>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        </p>
+    {% endif %}
+    
+    {% if book.description %}
+        <p><strong>Описание:</strong> {{ book.description }}</p>
+    {% endif %}
+    
+    {% if book.cover %}
+        <img src="{{ book.cover.url }}" alt="Обложка книги {{ book.title }}" width="200">
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'library:book_list' %}">← Назад к списку книг</a>
+</body>
+</html>

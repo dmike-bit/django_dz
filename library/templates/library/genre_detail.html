@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ genre.name }}</title>
+</head>
+<body>
+    <h1>{{ genre.name }}</h1>
+    
+    {% if genre.description %}
+        <p><strong>Описание:</strong> {{ genre.description }}</p>
+    {% endif %}
+
+    <h2>Книги в жанре "{{ genre.name }}":</h2>
+    <ul>
+        {% for book in books %}
+            <li>
+                <a href="{% url 'library:book_detail' book.pk %}">{{ book.title }}</a>
+                - {{ book.get_authors_list }}
+                ({{ book.publication_year }})
+                {% if book.publisher %} - {{ book.publisher.name }}{% endif %}
+            </li>
+        {% empty %}
+            <li>Книги не найдены</li>
+        {% endfor %}
+    </ul>
+
+    <br>
+    <a href="{% url 'library:genre_list' %}">← Назад к списку жанров</a>
+</body>
+</html>

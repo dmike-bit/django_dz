@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список книг</title>
+</head>
+<body>
+    <h1>Список книг</h1>
+    
+    <ul>
+        {% for book in books %}
+            <li>
+                <a href="{% url 'library:book_detail' book.pk %}">{{ book.title }}</a>
+                - {{ book.get_authors_list }}
+                ({{ book.publication_year }})
+            </li>
+        {% empty %}
+            <li>Книги не найдены</li>
+        {% endfor %}
+    </ul>
+
+    {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">← Назад</a>
+            {% endif %}
+            
+            <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Вперед →</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <nav>
+        <a href="{% url 'library:author_list' %}">Авторы</a> |
+        <a href="{% url 'library:publisher_list' %}">Издательства</a> |
+        <a href="{% url 'library:genre_list' %}">Жанры</a>
+    </nav>
+</body>
+</html>

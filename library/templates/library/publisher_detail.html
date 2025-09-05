@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ publisher.name }}</title>
+</head>
+<body>
+    <h1>{{ publisher.name }}</h1>
+    
+    <p><strong>Страна:</strong> {{ publisher.country }}</p>
+    <p><strong>Год основания:</strong> {{ publisher.foundation_year }}</p>
+
+    <h2>Книги издательства:</h2>
+    <ul>
+        {% for book in published_books %}
+            <li>
+                <a href="{% url 'library:book_detail' book.pk %}">{{ book.title }}</a>
+                - {{ book.get_authors_list }}
+                ({{ book.publication_year }})
+            </li>
+        {% empty %}
+            <li>Книги не найдены</li>
+        {% endfor %}
+    </ul>
+
+    <br>
+    <a href="{% url 'library:publisher_list' %}">← Назад к списку издательств</a>
+</body>
+</html>
