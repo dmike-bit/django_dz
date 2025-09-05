@@ -2,6 +2,45 @@ from django.views.generic import ListView, DetailView
 from .models import Book, Author, Publisher, Genre
 from django.db.models import Prefetch
 
+
+from django.views.generic import CreateView
+from django.shortcuts import get_object_or_404
+from .forms import BookForm
+
+class BookCreateView(CreateView):
+    model = Book
+    form_class = BookForm
+    template_name = "library/book_form.html"
+    success_url = '/books/'
+
+class BookCreateForAuthorView(CreateView):
+    model = Book
+    form_class = BookForm
+    template_name = "library/book_form.html"
+    success_url = '/books/'
+
+    def get_initial(self):
+        """Предзаполняем поле автора"""
+        initial = super().get_initial()
+        author_id = self.kwargs.get('author_id')
+        if author_id:
+            initial['authors'] = [author_id]
+        return initial
+
+    def get_context_data(self, **kwargs):
+        """Передаем автора в контекст для отображения в шаблоне"""
+        context = super().get_context_data(**kwargs)
+        author_id = self.kwargs.get('author_id')
+        if author_id:
+            context['author'] = get_object_or_404(Author, pk=author_id)
+        return context
+
+    def form_valid(self, form):
+        """Дополнительная обработка при валидной форме"""
+        response = super().form_valid(form)
+        # Можно добавить дополнительную логику здесь
+        return response
+
 class BookListView(ListView):
     model = Book
     template_name = "library/book_list.html"

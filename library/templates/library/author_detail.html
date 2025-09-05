@@ -2,6 +2,20 @@
 <html>
 <head>
     <title>{{ author.full_name }}</title>
+    <style>
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+    </style>
 </head>
 <body>
     <h1>{{ author.full_name }}</h1>
@@ -10,9 +24,11 @@
     <p><strong>Возраст:</strong> {{ author.get_age }} лет</p>
     
     {% if author.biography %}
-        <h2>Биография:</h2>
-        <p>{{ author.biography }}</p>
+        <p><strong>Биография:</strong> {{ author.biography }}</p>
     {% endif %}
+
+    <!-- Кнопка добавления книги для этого автора -->
+    <a href="{% url 'library:book_create_for_author' author.pk %}" class="btn">Добавить книгу этого автора</a>
 
     <h2>Книги автора:</h2>
     <ul>
