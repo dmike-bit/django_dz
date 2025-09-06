@@ -1,17 +1,69 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
-    
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Забронировать</button>
-    </form>
-    
-    <a href="{% url 'library:book_detail' book.pk %}">← Назад к книге</a>
-</body>
-</html>
+{% extends 'library/base.html' %}
+{% load static %}
+
+{% block title %}Бронирование {{ book.title }} - Библиотека{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'library/css/booking.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'library/js/datepicker.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="booking-container">
+    <div class="booking-header">
+        <h1>Бронирование книги</h1>
+        <a href="{% url 'library:book_detail' book.pk %}" class="btn btn-back">← Назад к книге</a>
+    </div>
+
+    <div class="book-info-card">
+        <h2>{{ book.title }}</h2>
+        <div class="book-details">
+            <p><strong>Авторы:</strong> {{ book.get_authors_list }}</p>
+            <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+            <p><strong>Год издания:</strong> {{ book.publication_year }}</p>
+            {% if book.publisher %}
+                <p><strong>Издательство:</strong> {{ book.publisher.name }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if book.reservations.filter.status='active' %}
+        <div class="alert alert-warning">
+            ⚠️ Эта книга уже забронирована! Бронирование невозможно.
+        </div>
+    {% else %}
+        <form method="post" class="booking-form">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <h3>Выбор читателя</h3>
+                <div class="form-group">
+                    <label for="reader">Читатель:</label>
+                    <select name="reader" id="reader" class="form-control" required>
+                        <option value="">-- Выберите читателя --</option>
+                        {% for reader in readers %}
+                            <option value="{{ reader.id }}">{{ reader.full_name }} ({{ reader.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Даты бронирования</h3>
+                {% include 'library/includes/date_picker.html' with min_date=min_date default_date=default_date %}
+                
+                <div class="duration-info">
+                    <p><strong>Длительность брони:</strong> 14 дней</p>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large">Подтвердить бронирование</button>
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

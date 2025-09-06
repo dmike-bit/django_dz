@@ -1,0 +1,9 @@
+<div class="form-group">
+    <label for="booking_date">Дата начала бронирования:</label>
+    <input type="date" id="booking_date" name="booking_date" 
+           class="form-control"
+           min="{{ min_date|date:'Y-m-d' }}" 
+           value="{{ default_date|date:'Y-m-d' }}"
+           required>
+    <small class="form-text">Бронь будет действовать 14 дней с выбранной даты</small>
+</div>

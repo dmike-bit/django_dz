@@ -10,13 +10,41 @@ def book_reserve(request, book_id):
     """Бронирование конкретной книги"""
     book = get_object_or_404(Book, pk=book_id)
     
+    # Проверяем доступность книги
+    if book.reservations.filter(status='active').exists():
+        return render(request, 'library/book_reserve.html', {
+            'book': book,
+            'title': f'Бронирование книги: {book.title}',
+            'readers': Reader.objects.all(),
+            'min_date': timezone.now().date(),
+            'default_date': timezone.now().date(),
+        })
+    
     if request.method == 'POST':
         form = BookReservationForm(request.POST, book=book)
         if form.is_valid():
             reservation = form.save(commit=False)
             reservation.book = book
             reservation.status = 'active'
-            reservation.end_date = timezone.now() + timezone.timedelta(days=14)
+            
+            # Обрабатываем дату из формы
+            booking_date_str = request.POST.get('booking_date')
+            if booking_date_str:
+                try:
+                    from datetime import datetime
+                    booking_date = datetime.strptime(booking_date_str, '%Y-%m-%d').date()
+                    reservation.reservation_date = timezone.make_aware(
+                        datetime.combine(booking_date, datetime.min.time())
+                    )
+                    reservation.end_date = reservation.reservation_date + timezone.timedelta(days=14)
+                except (ValueError, TypeError):
+                    # Если дата некорректна, используем текущую дату
+                    reservation.reservation_date = timezone.now()
+                    reservation.end_date = reservation.reservation_date + timezone.timedelta(days=14)
+            else:
+                reservation.reservation_date = timezone.now()
+                reservation.end_date = reservation.reservation_date + timezone.timedelta(days=14)
+            
             reservation.save()
             return redirect('library:reader_reservations', reader_id=reservation.reader.pk)
     else:
@@ -25,7 +53,10 @@ def book_reserve(request, book_id):
     return render(request, 'library/book_reserve.html', {
         'form': form,
         'book': book,
-        'title': f'Бронирование книги: {book.title}'
+        'title': f'Бронирование книги: {book.title}',
+        'readers': Reader.objects.all(),
+        'min_date': timezone.now().date(),
+        'default_date': timezone.now().date(),
     })
 
 def reader_reservations(request, reader_id):
