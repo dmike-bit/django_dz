@@ -192,6 +192,11 @@ class Book(models.Model):
         verbose_name="Издательство"
     )
     genres = models.ManyToManyField(Genre, verbose_name="Жанры")
+
+    
+    def is_available(self):
+        """Проверяет, доступна ли книга для бронирования"""
+        return not self.reservations.filter(status='active').exists()
     
     class Meta:
         verbose_name = "Книга"

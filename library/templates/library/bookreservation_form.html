@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Создать бронь</title>
+</head>
+<body>
+    <h1>Создать бронирование книги</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Сохранить</button>
+    </form>
+    
+    <a href="{% url 'library:reservation_list' %}">Назад к списку</a>
+</body>
+</html>

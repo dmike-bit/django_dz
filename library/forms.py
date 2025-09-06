@@ -25,30 +25,39 @@ class ReaderForm(forms.ModelForm):
 class BookReservationForm(forms.ModelForm):
     class Meta:
         model = BookReservation
-        fields = ['book', 'reader', 'end_date']
+        fields = ['reader']
         widgets = {
-            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'book': forms.Select(attrs={'class': 'form-select'}),
             'reader': forms.Select(attrs={'class': 'form-select'}),
         }
+        labels = {
+            'reader': 'Читатель',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.book = kwargs.pop('book', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.book:
+            # Скрываем поле книги, если она передана
+            self.fields['book'] = forms.ModelChoiceField(
+                queryset=Book.objects.filter(pk=self.book.pk),
+                initial=self.book,
+                widget=forms.HiddenInput()
+            )
     
     def clean(self):
         cleaned_data = super().clean()
-        book = cleaned_data.get('book')
+        book = cleaned_data.get('book') or self.book
         reader = cleaned_data.get('reader')
-        end_date = cleaned_data.get('end_date')
         
-        # Проверяем, что книга доступна для бронирования
-        if book and book.reservations.filter(status='active').exists():
-            raise ValidationError("Эта книга уже забронирована")
-        
-        # Проверяем, что у читателя нет активных броней на эту книгу
-        if reader and book and reader.has_active_reservation(book):
-            raise ValidationError("У этого читателя уже есть активная бронь на эту книгу")
-        
-        # Проверяем, что дата окончания не в прошлом
-        if end_date and end_date < timezone.now():
-            raise ValidationError("Дата окончания брони не может быть в прошлом")
+        if book and reader:
+            # Проверяем, что книга доступна для бронирования
+            if book.reservations.filter(status='active').exists():
+                raise ValidationError("Эта книга уже забронирована")
+            
+            # Проверяем, что у читателя нет активных броней на эту книгу
+            if reader.has_active_reservation(book):
+                raise ValidationError("У этого читателя уже есть активная бронь на эту книгу")
         
         return cleaned_data
 

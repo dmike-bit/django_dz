@@ -37,5 +37,17 @@
     
     <br>
     <a href="{% url 'library:book_list' %}">← Назад к списку книг</a>
+
+    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <h3>Бронирование</h3>
+    {% if book.is_available %}
+        <p style="color: green;">✅ Книга доступна для бронирования</p>
+        <a href="{% url 'library:book_reserve' book.pk %}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Забронировать книгу
+        </a>
+    {% else %}
+        <p style="color: red;">⚠️ Эта книга уже забронирована</p>
+    {% endif %}
+    </div>
 </body>
 </html>

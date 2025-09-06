@@ -1,16 +1,67 @@
-from django.views.generic import ListView, DetailView
-from .models import Book, Author, Publisher, Genre
-from django.db.models import Prefetch
-
-
-from django.views.generic import CreateView
-from .forms import BookForm
-
+from django.views.generic import ListView, DetailView, CreateView
+from .models import Book, Author, Publisher, Genre, Reader, BookReservation
+from .forms import BookForm, ReaderForm, BookReservationForm
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView
-from django.db.models import Q
-from .models import Reader, BookReservation
-from .forms import ReaderForm, BookReservationForm
+from django.db.models import Q, Case, When, Value, IntegerField
+from django.utils import timezone
+from django.http import HttpResponseForbidden
+
+def book_reserve(request, book_id):
+    """Бронирование конкретной книги"""
+    book = get_object_or_404(Book, pk=book_id)
+    
+    if request.method == 'POST':
+        form = BookReservationForm(request.POST, book=book)
+        if form.is_valid():
+            reservation = form.save(commit=False)
+            reservation.book = book
+            reservation.status = 'active'
+            reservation.end_date = timezone.now() + timezone.timedelta(days=14)
+            reservation.save()
+            return redirect('library:reader_reservations', reader_id=reservation.reader.pk)
+    else:
+        form = BookReservationForm(book=book)
+    
+    return render(request, 'library/book_reserve.html', {
+        'form': form,
+        'book': book,
+        'title': f'Бронирование книги: {book.title}'
+    })
+
+def reader_reservations(request, reader_id):
+    """Список броней конкретного читателя с сортировкой"""
+    reader = get_object_or_404(Reader, pk=reader_id)
+    current_date = timezone.now()
+    
+    reservations = BookReservation.objects.filter(reader=reader).annotate(
+        status_priority=Case(
+            When(
+                status='active',
+                end_date__lt=current_date,
+                then=Value(1)
+            ),
+            When(
+                status='active',
+                end_date__gte=current_date,
+                then=Value(2)
+            ),
+            When(
+                status='completed',
+                then=Value(3)
+            ),
+            When(
+                status='canceled',
+                then=Value(4)
+            ),
+            output_field=IntegerField(),
+        )
+    ).order_by('status_priority', '-reservation_date')
+    
+    return render(request, 'library/reader_reservations.html', {
+        'reservations': reservations,
+        'reader': reader,
+        'current_date': current_date,
+    })
 
 def reader_list(request):
     """Список читателей с поиском"""
@@ -25,7 +76,7 @@ def reader_list(request):
     else:
         readers = Reader.objects.all()
     
-    return render(request, 'readers/list.html', {
+    return render(request, 'library/reader_list.html', {
         'readers': readers,
         'search_query': search_query
     })
@@ -40,7 +91,7 @@ def reader_create(request):
     else:
         form = ReaderForm()
     
-    return render(request, 'readers/form.html', {
+    return render(request, 'library/reader_form.html', {
         'form': form,
         'title': 'Добавить читателя'
     })
@@ -49,19 +100,18 @@ class BookReservationCreateView(CreateView):
     """Создание бронирования книги"""
     model = BookReservation
     form_class = BookReservationForm
-    template_name = 'reservations/form.html'
+    template_name = "library/bookreservation_form.html"
     success_url = '/reservations/'
 
     def form_valid(self, form):
-        # Устанавливаем статус активной брони
         form.instance.status = 'active'
         return super().form_valid(form)
 
 class ReservationListView(ListView):
-    """Список бронирований"""
+    """Список всех бронирований"""
     model = BookReservation
-    template_name = 'reservations/list.html'
-    context_object_name = 'reservations'
+    template_name = "library/bookreservation_list.html"
+    context_object_name = "reservations"
     ordering = ['-reservation_date']
     
     def get_queryset(self):
@@ -86,7 +136,6 @@ class BookCreateForAuthorView(CreateView):
     success_url = '/books/'
 
     def get_initial(self):
-        """Предзаполняем поле автора"""
         initial = super().get_initial()
         author_id = self.kwargs.get('author_id')
         if author_id:
@@ -94,7 +143,6 @@ class BookCreateForAuthorView(CreateView):
         return initial
 
     def get_context_data(self, **kwargs):
-        """Передаем автора в контекст для отображения в шаблоне"""
         context = super().get_context_data(**kwargs)
         author_id = self.kwargs.get('author_id')
         if author_id:
@@ -102,9 +150,7 @@ class BookCreateForAuthorView(CreateView):
         return context
 
     def form_valid(self, form):
-        """Дополнительная обработка при валидной форме"""
         response = super().form_valid(form)
-        # Можно добавить дополнительную логику здесь
         return response
 
 class BookListView(ListView):
@@ -139,7 +185,6 @@ class AuthorDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Получаем книги автора с предзагрузкой связанных данных
         context["books"] = Book.objects.filter(authors=self.object).select_related('publisher').prefetch_related('genres')
         return context
 
@@ -157,7 +202,6 @@ class PublisherDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Получаем книги издательства с предзагрузкой авторов и жанров
         context["published_books"] = Book.objects.filter(publisher=self.object).select_related('publisher').prefetch_related('authors', 'genres')
         return context
 
@@ -175,6 +219,5 @@ class GenreDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Получаем книги жанра с предзагрузкой связанных данных
         context["books"] = Book.objects.filter(genres=self.object).select_related('publisher').prefetch_related('authors', 'genres')
         return context

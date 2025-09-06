@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Бронирования читателя: {{ reader.full_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .reader-info {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .overdue {
+            background-color: #ffcccc !important;
+        }
+        .active {
+            background-color: #ccffcc !important;
+        }
+        .completed {
+            background-color: #ffffcc !important;
+        }
+        .canceled {
+            background-color: #f0f0f0 !important;
+            text-decoration: line-through;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-active { background-color: #28a745; color: white; }
+        .badge-completed { background-color: #17a2b8; color: white; }
+        .badge-canceled { background-color: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Бронирования читателя</h1>
+    
+    <div class="reader-info">
+        <h2>{{ reader.full_name }}</h2>
+        <p><strong>Email:</strong> {{ reader.email }}</p>
+        <p><strong>Телефон:</strong> {{ reader.phone_number }}</p>
+        <p><strong>Дата регистрации:</strong> {{ reader.registration_date|date:"d.m.Y" }}</p>
+    </div>
+    
+    {% if reservations %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Книга</th>
+                    <th>Дата бронирования</th>
+                    <th>Дата окончания</th>
+                    <th>Статус</th>
+                    <th>Примечание</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                    <tr class="
+                        {% if reservation.status == 'active' and reservation.end_date < current_date %}overdue
+                        {% elif reservation.status == 'active' %}active
+                        {% elif reservation.status == 'completed' %}completed
+                        {% elif reservation.status == 'canceled' %}canceled
+                        {% endif %}
+                    ">
+                        <td>
+                            <strong>
+                                <a href="{% url 'library:book_detail' reservation.book.pk %}">
+                                    {{ reservation.book.title }}
+                                </a>
+                            </strong><br>
+                            <small>{{ reservation.book.get_authors_list }}</small>
+                        </td>
+                        <td>{{ reservation.reservation_date|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            {{ reservation.end_date|date:"d.m.Y H:i" }}
+                            {% if reservation.status == 'active' and reservation.end_date < current_date %}
+                                <br><small style="color: red;">⚠️ Просрочена</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status-badge badge-{{ reservation.status }}">
+                                {{ reservation.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if reservation.status == 'active' and reservation.end_date < current_date %}
+                                <span style="color: red;">Требует внимания</span>
+                            {% elif reservation.status == 'active' %}
+                                <span style="color: green;">Активна</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-data">
+            <p>У читателя нет броней</p>
+            <a href="{% url 'library:book_list' %}">← Перейти к книгам для бронирования</a>
+        </div>
+    {% endif %}
+    
+    <br>
+    <div>
+        <a href="{% url 'library:reader_list' %}">← К списку читателей</a> |
+        <a href="{% url 'library:book_list' %}">← К списку книг</a>
+    </div>
+</body>
+</html>

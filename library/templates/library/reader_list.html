@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список бронирований</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .status-active { color: green; }
+        .status-completed { color: blue; }
+        .status-canceled { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Список бронирований</h1>
+    
+    <a href="{% url 'library:reservation_create' %}">Добавить бронь</a>
+    
+    {% if reservations %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Книга</th>
+                    <th>Читатель</th>
+                    <th>Дата брони</th>
+                    <th>Дата окончания</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                    <tr>
+                        <td>{{ reservation.book.title }}</td>
+                        <td>{{ reservation.reader.full_name }}</td>
+                        <td>{{ reservation.reservation_date|date:"d.m.Y H:i" }}</td>
+                        <td>{{ reservation.end_date|date:"d.m.Y H:i" }}</td>
+                        <td class="status-{{ reservation.status }}">
+                            {{ reservation.get_status_display }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Бронирования не найдены</p>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'library:book_list' %}">← Назад к книгам</a>
+</body>
+</html>

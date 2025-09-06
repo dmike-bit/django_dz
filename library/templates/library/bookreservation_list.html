@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список бронирований</title>
+</head>
+<body>
+    <h1>Все бронирования книг</h1>
+    
+    <ul>
+        {% for reservation in reservations %}
+            <li>
+                Книга: {{ reservation.book.title }} | 
+                Читатель: {{ reservation.reader.full_name }} | 
+                Статус: {{ reservation.get_status_display }} |
+                До: {{ reservation.end_date|date:"d.m.Y H:i" }}
+            </li>
+        {% empty %}
+            <li>Бронирования не найдены</li>
+        {% endfor %}
+    </ul>
+    
+    <a href="{% url 'library:reservation_create' %}">Создать бронь</a>
+    <br>
+    <a href="{% url 'library:book_list' %}">← Назад к книгам</a>
+</body>
+</html>
