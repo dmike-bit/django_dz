@@ -1,53 +1,63 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ book.title }}</title>
-</head>
-<body>
-    <h1>{{ book.title }}</h1>
-    
-    <p><strong>ISBN:</strong> {{ book.isbn }}</p>
-    <p><strong>Год издания:</strong> {{ book.publication_year }}</p>
-    
-    {% if book.authors.all %}
-        <p><strong>Авторы:</strong> {{ book.get_authors_list }}</p>
-    {% endif %}
-    
-    {% if book.publisher %}
-        <p><strong>Издательство:</strong> 
-            <a href="{% url 'library:publisher_detail' book.publisher.pk %}">{{ book.publisher.name }}</a>
-        </p>
-    {% endif %}
-    
-    {% if book.genres.all %}
-        <p><strong>Жанры:</strong> 
-            {% for genre in book.genres.all %}
-                <a href="{% url 'library:genre_detail' genre.pk %}">{{ genre.name }}</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-        </p>
-    {% endif %}
-    
-    {% if book.description %}
-        <p><strong>Описание:</strong> {{ book.description }}</p>
-    {% endif %}
-    
-    {% if book.cover %}
-        <img src="{{ book.cover.url }}" alt="Обложка книги {{ book.title }}" width="200">
-    {% endif %}
-    
-    <br>
-    <a href="{% url 'library:book_list' %}">← Назад к списку книг</a>
+{% extends 'library/base.html' %}
+{% load static %}
 
-    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
-    <h3>Бронирование</h3>
-    {% if book.is_available %}
-        <p style="color: green;">✅ Книга доступна для бронирования</p>
-        <a href="{% url 'library:book_reserve' book.pk %}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-            Забронировать книгу
-        </a>
-    {% else %}
-        <p style="color: red;">⚠️ Эта книга уже забронирована</p>
-    {% endif %}
+{% block title %}{{ book.title }} - Библиотека{% endblock %}
+
+{% block content %}
+<div class="book-detail">
+    <div class="book-header">
+        <h1>{{ book.title }}</h1>
+        <a href="{% url 'library:book_list' %}" class="btn-back">← Назад к списку</a>
     </div>
-</body>
-</html>
+
+    <div class="book-content">
+        <div class="book-info">
+            <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+            <p><strong>Год издания:</strong> {{ book.publication_year }}</p>
+            
+            {% if book.authors.all %}
+                <p><strong>Авторы:</strong> {{ book.get_authors_list }}</p>
+            {% endif %}
+            
+            {% if book.publisher %}
+                <p><strong>Издательство:</strong> 
+                    <a href="{% url 'library:publisher_detail' book.publisher.pk %}">{{ book.publisher.name }}</a>
+                </p>
+            {% endif %}
+            
+            {% if book.genres.all %}
+                <p><strong>Жанры:</strong> 
+                    {% for genre in book.genres.all %}
+                        <a href="{% url 'library:genre_detail' genre.pk %}">{{ genre.name }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+            {% endif %}
+            
+            {% if book.description %}
+                <div class="book-description">
+                    <h3>Описание</h3>
+                    <p>{{ book.description }}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if book.cover %}
+            <div class="book-cover">
+                <img src="{{ book.cover.url }}" alt="Обложка книги {{ book.title }}" class="cover-image">
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="book-reservation">
+        <h3>Бронирование</h3>
+        {% if book.is_available %}
+            <p class="status-available">✅ Книга доступна для бронирования</p>
+            <a href="{% url 'library:book_reserve' book.pk %}" class="btn btn-success">
+                Забронировать книгу
+            </a>
+        {% else %}
+            <p class="status-unavailable">⚠️ Эта книга уже забронирована</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

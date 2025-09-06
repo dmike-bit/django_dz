@@ -1,52 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Список книг</title>
-    <style>
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
-</head>
-<body>
-    <h1>Список книг</h1>
-    
-    <!-- Кнопка добавления книги -->
-    <a href="{% url 'library:book_create' %}" class="btn">Добавить книгу</a>
-    
-    <ul>
-        {% for book in books %}
-            <li>
-                <a href="{% url 'library:book_detail' book.pk %}">{{ book.title }}</a>
-                - {{ book.get_authors_list }}
-                ({{ book.publication_year }})
-            </li>
-        {% empty %}
-            <li>Книги не найдены</li>
-        {% endfor %}
-    </ul>
+{% extends 'library/base.html' %}
+{% load static %}
 
-    {% if is_paginated %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}">← Назад</a>
-            {% endif %}
-            
-            <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
-            
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">Вперед →</a>
-            {% endif %}
-        </div>
+{% block title %}Каталог книг - Библиотека{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Каталог книг</h1>
+    <a href="{% url 'library:book_create' %}" class="btn btn-primary">Добавить книгу</a>
+</div>
+
+<div class="books-grid">
+    {% for book in books %}
+        {% include 'library/includes/book_card.html' with book=book %}
+    {% empty %}
+        <p class="no-data">Книги не найдены</p>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<div class="pagination">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="btn">← Назад</a>
     {% endif %}
-</body>
-</html>
+    
+    <span class="page-info">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+    
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="btn">Вперед →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

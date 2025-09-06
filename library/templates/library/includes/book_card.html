@@ -1,0 +1,12 @@
+<div class="book-card">
+    <h3><a href="{% url 'library:book_detail' book.pk %}">{{ book.title }}</a></h3>
+    <p><strong>Авторы:</strong> {{ book.get_authors_list }}</p>
+    <p><strong>Год издания:</strong> {{ book.publication_year }}</p>
+    {% if book.publisher %}
+        <p><strong>Издательство:</strong> {{ book.publisher.name }}</p>
+    {% endif %}
+    {% if book.cover %}
+        <img src="{{ book.cover.url }}" alt="{{ book.title }}" class="book-cover" width="100">
+    {% endif %}
+    <a href="{% url 'library:book_detail' book.pk %}" class="btn-details">Подробнее</a>
+</div>

@@ -1,0 +1,15 @@
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <h1><a href="{% url 'library:book_list' %}">📚 Библиотека</a></h1>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{% url 'library:book_list' %}">Книги</a></li>
+            <li><a href="{% url 'library:author_list' %}">Авторы</a></li>
+            <li><a href="{% url 'library:publisher_list' %}">Издательства</a></li>
+            <li><a href="{% url 'library:genre_list' %}">Жанры</a></li>
+            <li><a href="{% url 'library:reader_list' %}">Читатели</a></li>
+            <li><a href="{% url 'library:reservation_list' %}">Брони</a></li>
+        </ul>
+    </nav>
+</header>
