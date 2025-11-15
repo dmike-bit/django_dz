@@ -57,18 +57,18 @@ class UserCreationForm(BaseUserCreationForm):
 class ReaderForm(forms.ModelForm):
     class Meta:
         model = Reader
-        fields = ['full_name', 'birth_date', 'address', 'phone_number', 'email']
+        fields = ['full_name', 'birth_date', 'address', 'phone', 'email']
         widgets = {
             'birth_date': forms.DateInput(attrs={'type': 'date'}),
             'address': forms.Textarea(attrs={'rows': 3}),
             'full_name': forms.TextInput(attrs={'placeholder': 'Иванов Иван Иванович'}),
-            'phone_number': forms.TextInput(attrs={'placeholder': '+79991234567'}),
+            'phone': forms.TextInput(attrs={'placeholder': '+79991234567'}),
         }
         labels = {
             'full_name': 'ФИО читателя',
             'birth_date': 'Дата рождения',
             'address': 'Адрес',
-            'phone_number': 'Номер телефона',
+            'phone': 'Номер телефона',
             'email': 'Email',
         }
 
@@ -142,4 +142,26 @@ class BookForm(forms.ModelForm):
         self.fields['publisher'].empty_label = "Выберите издательство"
         
         # Убираем обязательность поля, если нужно
-        self.fields['cover'].required = False
+class ReaderRegistrationForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+    class Meta:
+        model = Reader
+        fields = ['full_name', 'birth_date', 'phone', 'email']
+        widgets = {
+            'full_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Иванов Иван Иванович'}),
+            'birth_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+79991234567'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'example@email.com'}),
+        }
+        labels = {
+            'full_name': 'ФИО',
+            'birth_date': 'Дата рождения',
+            'phone': 'Телефон',
+            'email': 'Email',
+            'password': 'Пароль',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Убираем обязательность поля cover, если оно есть (но в этой форме его нет)

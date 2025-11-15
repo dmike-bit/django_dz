@@ -1,0 +1,62 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Мой профиль{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Мой профиль</h1>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Личная информация</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>ФИО:</strong> {{ reader.full_name }}</p>
+                    <p><strong>Дата рождения:</strong> {{ reader.birth_date }}</p>
+                    <p><strong>Адрес:</strong> {{ reader.address }}</p>
+                    <p><strong>Телефон:</strong> {{ reader.phone }}</p>
+                    <p><strong>Email:</strong> {{ reader.email }}</p>
+                    <p><strong>Роль:</strong> {{ reader.get_role_display }}</p>
+                    <p><strong>Дата регистрации:</strong> {{ reader.registration_date }}</p>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Активные бронирования</h5>
+                </div>
+                <div class="card-body">
+                    {% if reader.get_active_reservations %}
+                    <ul class="list-group">
+                        {% for reservation in reader.get_active_reservations %}
+                        <li class="list-group-item">
+                            <strong>{{ reservation.book.title }}</strong><br>
+                            Дата окончания: {{ reservation.end_date|date:"d.m.Y" }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p>У вас нет активных бронирований.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Действия</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'library:book_list' %}" class="btn btn-primary btn-block mb-2">Просмотр книг</a>
+                    {% if user.reader.is_admin %}
+                    <a href="{% url 'library:user-list' %}" class="btn btn-warning btn-block">Управление</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

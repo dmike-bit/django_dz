@@ -1,6 +1,6 @@
 from django.views.generic import ListView, DetailView, CreateView
-from .models import Book, Author, Publisher, Genre, Reader, BookReservation
-from .forms import BookForm, ReaderForm, BookReservationForm, LoginForm, UserCreationForm
+from .models import Book, Author, Publisher, Genre, Reader, BookReservation, User
+from .forms import BookForm, ReaderForm, BookReservationForm, LoginForm, UserCreationForm, ReaderRegistrationForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, Case, When, Value, IntegerField
 from django.utils import timezone
@@ -8,6 +8,24 @@ from django.http import HttpResponseForbidden
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from functools import wraps
+def reader_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden("Требуется аутентификация")
+        if not hasattr(request.user, 'reader') or not request.user.reader.is_reader:
+            return HttpResponseForbidden("Доступ запрещен")
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.reader.is_admin:
+            return HttpResponseForbidden("Доступ запрещен")
+        return view_func(request, *args, **kwargs)
+    return wrapper
 from django.urls import reverse
 
 def login_view(request):
@@ -51,21 +69,32 @@ def logout_view(request):
     return redirect('login')
 
 def register_view(request):
-    """Представление для регистрации нового пользователя"""
+    """Представление для регистрации нового пользователя и читателя"""
     if request.user.is_authenticated:
         return redirect('library:book_list')
 
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = ReaderRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            username = form.cleaned_data.get('username')
+            # Создаем пользователя
+            username = form.cleaned_data['email']  # Используем email как username
+            password = form.cleaned_data['password']
+            user = User.objects.create_user(username=username, email=form.cleaned_data['email'], password=password)
+            user.role = 'reader'  # Автоматически устанавливаем роль reader
+            user.save()
+
+            # Создаем читателя и связываем с пользователем
+            reader = form.save(commit=False)
+            reader.user = user
+            reader.role = 'reader'  # Автоматически устанавливаем роль reader
+            reader.save()
+
             messages.success(request, f'Аккаунт для {username} успешно создан! Теперь вы можете войти.')
             return redirect('login')
         else:
             messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
     else:
-        form = UserCreationForm()
+        form = ReaderRegistrationForm()
 
     return render(request, 'registration/register.html', {
         'form': form,
@@ -176,7 +205,7 @@ def reader_list(request):
         readers = Reader.objects.filter(
             Q(full_name__icontains=search_query) |
             Q(email__icontains=search_query) |
-            Q(phone_number__icontains=search_query)
+            Q(phone__icontains=search_query)
         )
     else:
         readers = Reader.objects.all()
@@ -310,6 +339,26 @@ class PublisherDetailView(DetailView):
         context["published_books"] = Book.objects.filter(publisher=self.object).select_related('publisher').prefetch_related('authors', 'genres')
         return context
 
+# Удалены дублирующие определения GenreListView и GenreDetailView
+
+@reader_required
+def profile_view(request):
+    """Профиль пользователя"""
+    reader = request.user.reader
+    return render(request, 'readers/profile.html', {
+        'reader': reader,
+        'title': 'Мой профиль'
+    })
+
+@admin_required
+def user_list_view(request):
+    """Список пользователей для админа"""
+    users = User.objects.all().select_related('reader')
+    return render(request, 'admin/users.html', {
+        'users': users,
+        'title': 'Управление пользователями'
+    })
+
 class GenreListView(ListView):
     model = Genre
     template_name = "library/genre_list.html"
@@ -321,7 +370,7 @@ class GenreDetailView(DetailView):
     model = Genre
     template_name = "library/genre_detail.html"
     context_object_name = "genre"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["books"] = Book.objects.filter(genres=self.object).select_related('publisher').prefetch_related('authors', 'genres')

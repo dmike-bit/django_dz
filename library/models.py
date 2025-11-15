@@ -35,11 +35,17 @@ class User(AbstractUser):
 
 class Reader(models.Model):
     """Модель читателя"""
-    full_name = models.CharField(max_length=200, verbose_name="ФИО читателя")
+    ROLE_CHOICES = [
+        ('guest', 'Гость'),
+        ('reader', 'Читатель'),
+        ('admin', 'Администратор')
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=100, verbose_name="ФИО читателя")
     birth_date = models.DateField(verbose_name="Дата рождения")
     address = models.TextField(verbose_name="Адрес")
-    phone_number = models.CharField(
-        max_length=15,
+    phone = models.CharField(
+        max_length=20,
         verbose_name="Номер телефона",
         validators=[
             RegexValidator(
@@ -49,6 +55,7 @@ class Reader(models.Model):
         ]
     )
     email = models.EmailField(verbose_name="Email", unique=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='reader', verbose_name="Роль")
     registration_date = models.DateTimeField(
         verbose_name="Дата регистрации",
         auto_now_add=True
@@ -74,7 +81,19 @@ class Reader(models.Model):
     def get_active_reservations(self):
         """Возвращает активные брони читателя"""
         return self.reservations.filter(status='active')
-    
+
+    @property
+    def is_guest(self):
+        return self.role == 'guest'
+
+    @property
+    def is_reader(self):
+        return self.role == 'reader'
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+
     def has_active_reservation(self, book):
         """Проверяет, есть ли у читателя активная бронь на книгу"""
         return self.reservations.filter(book=book, status='active').exists()

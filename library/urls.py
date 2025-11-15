@@ -4,6 +4,9 @@ from . import views
 app_name = 'library'
 
 urlpatterns = [
+    # Главная страница - перенаправляем на список книг
+    path('', views.BookListView.as_view(), name='home'),
+
     # Аутентификация
     path('accounts/login/', views.login_view, name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),
@@ -12,6 +15,7 @@ urlpatterns = [
 
     # Основные URL-ы
     path('books/', views.BookListView.as_view(), name='book_list'),
+    path('profile/', views.profile_view, name='profile'),
     path('books/<int:pk>/', views.BookDetailView.as_view(), name='book_detail'),
     path('books/add/', views.BookCreateView.as_view(), name='book_create'),
     path('books/add/author/<int:author_id>/', views.BookCreateForAuthorView.as_view(), name='book_create_for_author'),
@@ -32,5 +36,6 @@ urlpatterns = [
     path('publishers/', views.PublisherListView.as_view(), name='publisher_list'),
     path('publishers/<int:pk>/', views.PublisherDetailView.as_view(), name='publisher_detail'),
     path('genres/', views.GenreListView.as_view(), name='genre_list'),
+path('manage/users/', views.user_list_view, name='user-list'),
     path('genres/<int:pk>/', views.GenreDetailView.as_view(), name='genre_detail'),
 ]
