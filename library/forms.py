@@ -1,8 +1,58 @@
 from django import forms
 from .models import Book, Author
-from .models import Reader, BookReservation
+from .models import Reader, BookReservation, User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
+
+class LoginForm(forms.Form):
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Имя пользователя'
+        }),
+        label='Имя пользователя'
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Пароль'
+        }),
+        label='Пароль'
+    )
+
+class UserCreationForm(BaseUserCreationForm):
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Email'
+        }),
+        label='Email'
+    )
+    role = forms.ChoiceField(
+        choices=User.ROLE_CHOICES,
+        initial='reader',
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Роль'
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2', 'role')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Пароль'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Подтверждение пароля'
+        })
 
 class ReaderForm(forms.ModelForm):
     class Meta:

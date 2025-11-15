@@ -1,10 +1,84 @@
 from django.views.generic import ListView, DetailView, CreateView
 from .models import Book, Author, Publisher, Genre, Reader, BookReservation
-from .forms import BookForm, ReaderForm, BookReservationForm
+from .forms import BookForm, ReaderForm, BookReservationForm, LoginForm, UserCreationForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, Case, When, Value, IntegerField
 from django.utils import timezone
 from django.http import HttpResponseForbidden
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+
+def login_view(request):
+    """Представление для входа пользователя"""
+    if request.user.is_authenticated:
+        return redirect('library:book_list')
+
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'Добро пожаловать, {user.username}!')
+
+                # Редирект по роли
+                if user.role == 'admin':
+                    return redirect('/admin/')
+                elif user.role == 'reader':
+                    return redirect('library:reader_page')
+                else:  # guest
+                    return redirect('library:book_list')
+            else:
+                messages.error(request, 'Неверное имя пользователя или пароль.')
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
+    else:
+        form = LoginForm()
+
+    return render(request, 'registration/login.html', {
+        'form': form,
+        'title': 'Вход в систему'
+    })
+
+def logout_view(request):
+    """Представление для выхода пользователя"""
+    logout(request)
+    messages.info(request, 'Вы успешно вышли из системы.')
+    return redirect('login')
+
+def register_view(request):
+    """Представление для регистрации нового пользователя"""
+    if request.user.is_authenticated:
+        return redirect('library:book_list')
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Аккаунт для {username} успешно создан! Теперь вы можете войти.')
+            return redirect('login')
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'registration/register.html', {
+        'form': form,
+        'title': 'Регистрация'
+    })
+
+@login_required
+def reader_page(request):
+    """Личная страница читателя"""
+    # Здесь должна быть логика для страницы читателя
+    return render(request, 'library/reader_page.html', {
+        'title': 'Личная страница'
+    })
 
 def book_reserve(request, book_id):
     """Бронирование конкретной книги"""

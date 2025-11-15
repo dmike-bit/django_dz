@@ -1,0 +1,24 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Личная страница - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Личная страница читателя</h3>
+            </div>
+            <div class="card-body">
+                <p>Добро пожаловать, {{ user.username }}!</p>
+                <p>Ваша роль: {{ user.get_role_display }}</p>
+
+                <div class="mt-4">
+                    <a href="{% url 'library:book_list' %}" class="btn btn-primary">Просмотр книг</a>
+                    <a href="{% url 'logout' %}" class="btn btn-secondary ms-2">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'library/base.html' %}
+
+{% block title %}Выход - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Вы успешно вышли из системы</h3>
+            </div>
+            <div class="card-body text-center">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <p>Спасибо за использование нашей библиотеки!</p>
+
+                <div class="mt-4">
+                    <a href="{% url 'login' %}" class="btn btn-primary">Войти снова</a>
+                    <a href="{% url 'library:book_list' %}" class="btn btn-secondary ms-2">Просмотр книг</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

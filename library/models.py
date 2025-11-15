@@ -2,6 +2,36 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from datetime import date, timedelta
 from django.utils import timezone
+from django.contrib.auth.models import AbstractUser
+
+class User(AbstractUser):
+    """Кастомная модель пользователя"""
+    ROLE_CHOICES = [
+        ('guest', 'Гость'),
+        ('reader', 'Читатель'),
+        ('admin', 'Администратор'),
+    ]
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='reader',
+        verbose_name="Роль"
+    )
+
+    class Meta:
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+
+    def has_perm(self, perm):
+        """Проверка прав пользователя"""
+        if self.role == 'admin':
+            return True
+        elif self.role == 'reader' and perm in ['reader.view_book', 'reader.reserve_book']:
+            return True
+        elif self.role == 'guest' and perm in ['guest.view_book_list']:
+            return True
+        return False
+
 
 class Reader(models.Model):
     """Модель читателя"""

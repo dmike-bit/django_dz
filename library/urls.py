@@ -4,6 +4,12 @@ from . import views
 app_name = 'library'
 
 urlpatterns = [
+    # Аутентификация
+    path('accounts/login/', views.login_view, name='login'),
+    path('accounts/logout/', views.logout_view, name='logout'),
+    path('accounts/register/', views.register_view, name='register'),
+    path('accounts/profile/', views.reader_page, name='reader_page'),
+
     # Основные URL-ы
     path('books/', views.BookListView.as_view(), name='book_list'),
     path('books/<int:pk>/', views.BookDetailView.as_view(), name='book_detail'),
